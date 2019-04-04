@@ -22,9 +22,8 @@
 EVShield evshield(0x34,0x36);
 
 void setup() {
-  // Open serial communications and wait for port to open:
+  // Open serial communications
   Serial.begin(9600);
-  while (!Serial) ; // wait for serial port to connect. Needed for native USB port only
 
   // Have Dabble connect to Bluetooth Module:
   Dabble.begin(9600, 10, 11); // Baudrate, RX, TX to which bluetooth module is connected
