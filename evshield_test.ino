@@ -1,6 +1,14 @@
-/*
-  Mount Arduino to EVshield, connect USB cable then run this sketch.
-  Open the Serial terminal to view.
+/* 
+  This sketch uses the library "EVShield".
+  Check if this library is present in Documents\Arduino\libraries.
+  If not, install it:
+  https://home.et.utwente.nl/slootenvanf/wp-content/uploads/appdev-download/Installation_instructions.html#arduino
+
+  Mount the Arduino Uno to the EVshield:
+  https://home.et.utwente.nl/slootenvanf/2018/04/03/lego-evshield-battery-pack/
+  
+  Connect USB cable then run this sketch.
+  Open the Serial Monitor to view test output. Make sure the speed in the Serial Monitor is set to 9600.
 */
 
 #include <Wire.h>
