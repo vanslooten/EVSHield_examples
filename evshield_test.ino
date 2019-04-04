@@ -7,7 +7,7 @@
   Mount the Arduino Uno to the EVshield:
   https://home.et.utwente.nl/slootenvanf/2018/04/03/lego-evshield-battery-pack/
   
-  Connect USB cable then run this sketch.
+  Connect USB cable then Upload this sketch.
   Open the Serial Monitor to view test output. Make sure the speed in the Serial Monitor is set to 9600.
 */
 
@@ -18,7 +18,6 @@ EVShield evshield(0x34,0x36);
 
 void setup() {
   Serial.begin(9600); // start serial port output, check for same speed at Serial Monitor!
-  while (!Serial) ; // wait for serial port to connect. Needed for native USB port only
   
   evshield.init( SH_HardwareI2C );
 
