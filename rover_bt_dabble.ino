@@ -1,8 +1,9 @@
 /*
-/*
+  Checkout the building guide:
+  https://home.et.utwente.nl/slootenvanf/2019/04/04/lego-rover-car/
+  
   This sketch uses the libraries "EVShield" and "Dabble".
-  Check if these are present in Documents\Arduino\libraries.
-  If not, install them:
+  Check if these are present in Documents\Arduino\libraries. If not, install them:
   https://home.et.utwente.nl/slootenvanf/wp-content/uploads/appdev-download/Installation_instructions.html#arduino
   
   Uses Dabble in Gamepad mode (libraries\Dabble\src\GamePadModule.h)
@@ -12,8 +13,7 @@
   Connect USB cable then Upload this sketch.
   Open the Serial Monitor to view test output. Make sure the speed in the Serial Monitor is set to 9600.
 
-  If the car is driving in the wrong direction, in the loop() function you can swap the calls to forward() and backward()
-  at if ... GamePad.isUpPressed() and GamePad.isDownPressed()
+  If the car is driving in the wrong direction, swap SH_Direction_Reverse and SH_Direction_Forward in forward() and backward() functions
  */
 #include <Wire.h>
 #include <EVShield.h>
@@ -30,7 +30,7 @@ boolean dr_forward = false, dr_backward = false; // moving in forward or backwar
 
 void setup() {
   // Open serial communications and wait for port to open:
-  Serial.begin(115200);
+  Serial.begin(9600);
   while (!Serial) ; // wait for serial port to connect. Needed for native USB port only
 
   // BLE:
@@ -45,7 +45,8 @@ void setup() {
   evshield.bank_a.motorReset();
   evshield.bank_b.motorReset();
   evshield.bank_b.motorResetEncoder( SH_Motor_1 ); // Reset the current encoder position to zero for the motor
-  Serial.println( evshield.bank_a.evshieldGetBatteryVoltage() );
+
+  Serial.print(F("Battery voltage: ")); Serial.print( evshield.bank_a.evshieldGetBatteryVoltage() ); Serial.println(F(" mV (should be above 4000)"));
   
   evshield.ledSetRGB(165, 255, 0); // led orange (indicates ready for driving)
   delay(1000);
@@ -82,12 +83,11 @@ void loop() {
 }
 
 void manage_speed() {
-  speed++; // increase speed
-  delay(500);
+  speed=speed+5; // increase speed
+  delay(300);
   if (speed>SH_Speed_Full) speed=SH_Speed_Full;
   Serial.print(F("speed=")); Serial.println(speed);
 }
-
 
 void forward() {
   if (dr_backward) { // if we were moving in other direction, stop gently
