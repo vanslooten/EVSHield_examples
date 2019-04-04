@@ -1,8 +1,15 @@
 /*
-  Install Dabble library via Sketch > Include Library > Manage Libraries (search for "dabble")
-  uses Dabble in Gamepad mode (libraries\Dabble\src\GamePadModule.h)
+  This sketch uses the libraries "EVShield" and "Dabble".
+  Check if these are present in Documents\Arduino\libraries.
+  If not, install them:
+  https://home.et.utwente.nl/slootenvanf/wp-content/uploads/appdev-download/Installation_instructions.html#arduino
+  
+  Uses Dabble in Gamepad mode (libraries\Dabble\src\GamePadModule.h)
 
-  This sketch receives commands via Software serial (Dabble) and execute them with EVshield
+  This sketch receives commands via Software serial (Dabble) and execute them with EVshield.
+
+  Connect USB cable then Upload this sketch.
+  Open the Serial Monitor to view test output. Make sure the speed in the Serial Monitor is set to 9600.
  */
 #include <Wire.h>
 #include <EVShield.h>
@@ -19,8 +26,8 @@ void setup() {
   Serial.begin(9600);
   while (!Serial) ; // wait for serial port to connect. Needed for native USB port only
 
-  // BLE:
-  Dabble.begin(9600, 10, 11); // Baudrate & RX, TX to which bluetooth module is connected
+  // Have Dabble connect to Bluetooth Module:
+  Dabble.begin(9600, 10, 11); // Baudrate, RX, TX to which bluetooth module is connected
 
   // EVshield:
   evshield.init( SH_HardwareI2C );
