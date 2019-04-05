@@ -1,6 +1,7 @@
 /*
-  Checkout the building guide:
+  Checkout the building guides:
   https://home.et.utwente.nl/slootenvanf/2019/04/04/lego-rover-car/
+  https://home.et.utwente.nl/slootenvanf/2019/04/04/displays/
   
   This sketch uses the libraries "EVShield" and "Dabble".
   Check if these are present in Documents\Arduino\libraries. If not, install them:
