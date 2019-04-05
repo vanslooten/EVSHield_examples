@@ -1,5 +1,5 @@
 /*
- * https://www.tinytronics.nl/shop/en/display/oled/0.96-inch-oled-display-128*64-pixels-white-i2c
+ * https://home.et.utwente.nl/slootenvanf/2019/04/04/displays/
  * 
  * Connections (in combi with EVShield)
  */
