@@ -33,7 +33,15 @@ void setup() {
 
   Serial.println(F("Welcome to the Dabble test."));
   
-  Serial.print(F("Battery voltage: ")); Serial.print( evshield.bank_a.evshieldGetBatteryVoltage() ); Serial.println(F(" mV (should be above 4000)"));
+  unsigned int voltage = evshield.bank_a.evshieldGetBatteryVoltage();
+  Serial.print(F("Battery voltage: ")); Serial.print( voltage ); Serial.println(F(" mV (on batteries, should be above 5000)"));
+
+  if (voltage>6000)
+    evshield.ledSetRGB(0, 255, 0); // led green, battery Ok, ready for driving
+  else if (voltage>5000)
+    evshield.ledSetRGB(160, 160, 20); // led orange, battery might be low, ready for driving
+  else
+    evshield.ledSetRGB(255, 0, 0); // led red, battery low, problems might occur driving motors
 
   Serial.println(F("Connect to the Bluetooth module with the Dabble app, then press some buttons on the Gamepad"));
 }
