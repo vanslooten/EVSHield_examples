@@ -8,7 +8,7 @@
   
   Uses Dabble in Gamepad mode (libraries\Dabble\src\GamePadModule.h)
 
-  This sketch receives commands via Software serial (Dabble) and execute them with EVshield to drive motors.
+  This sketch receives commands via Software serial (Dabble) and execute them with EVShield to drive motors.
 
   Connect USB cable then Upload this sketch.
   Open the Serial Monitor to view test output. Make sure the speed in the Serial Monitor is set to 9600.
@@ -29,7 +29,7 @@ unsigned int speed=SH_Speed_Slow; // start speed
 boolean dr_forward = false, dr_backward = false; // moving in forward or backward direction
 
 void setup() {
-  // Open serial communications:
+  // Open serial communication:
   Serial.begin(9600);
 
   // BLE:
@@ -45,9 +45,16 @@ void setup() {
   evshield.bank_b.motorReset();
   evshield.bank_b.motorResetEncoder( SH_Motor_1 ); // Reset the current encoder position to zero for the motor
 
-  Serial.print(F("Battery voltage: ")); Serial.print( evshield.bank_a.evshieldGetBatteryVoltage() ); Serial.println(F(" mV (should be above 4000)"));
-  
-  evshield.ledSetRGB(165, 255, 0); // led orange (indicates ready for driving)
+  unsigned int voltage = evshield.bank_a.evshieldGetBatteryVoltage();
+  Serial.print(F("Battery voltage: ")); Serial.print( voltage ); Serial.println(F(" mV (on batteries, should be above 5000)"));
+
+  if (voltage>6000)
+    evshield.ledSetRGB(0, 255, 0); // led green, battery Ok, ready for driving
+  else if (voltage>5000)
+    evshield.ledSetRGB(160, 160, 20); // led orange, battery might be low, ready for driving
+  else
+    evshield.ledSetRGB(255, 0, 0); // led red, battery low, problems might occur driving motors
+ 
   delay(1000);
 
   Serial.println(F("Ready to roll!"));
@@ -96,6 +103,7 @@ void forward() {
   dr_forward=true; dr_backward=false;
   evshield.bank_a.motorRunUnlimited( SH_Motor_Both, SH_Direction_Forward, speed);
   evshield.ledSetRGB(255, 0, 0); // led green (indicates driving forward)
+  evshield.bank_a.centerLedSetRGB( 0, 0, 0); // turn off center led (between buttons)
 }
 
 void backward() {
@@ -105,14 +113,15 @@ void backward() {
   manage_speed();
   dr_forward=false; dr_backward=true;
   evshield.bank_a.motorRunUnlimited( SH_Motor_Both, SH_Direction_Reverse, speed);
-  evshield.ledSetRGB(0, 0, 255); // led blue (indicates driving forward)
+  evshield.ledSetRGB(0, 0, 255); // led blue (indicates driving backward)
 }
 
 void do_stop() {
   speed=SH_Speed_Slow;
-  evshield.bank_a.motorStop(SH_Motor_Both, SH_Next_Action_Float);
   evshield.bank_a.motorSetSpeed (SH_Motor_Both, SH_Speed_Slow);
-  delay(500);
+  evshield.bank_a.motorStop(SH_Motor_Both, SH_Next_Action_Float);  
+  evshield.bank_a.centerLedSetRGB( 0, 0, 0); // turn off center led (between buttons)
+  delay(300);
 }
 
 void stop() {
