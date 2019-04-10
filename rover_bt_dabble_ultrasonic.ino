@@ -57,11 +57,17 @@ void setup() {
   evshield.bank_b.motorReset();
   evshield.bank_b.motorResetEncoder( SH_Motor_1 ); // Reset the current encoder position to zero for the motor
 
-  Serial.print(F("Battery voltage: ")); Serial.print( evshield.bank_a.evshieldGetBatteryVoltage() ); Serial.println(F(" mV (should be above 4000)"));
-  
-  evshield.ledSetRGB(165, 255, 0); // led orange (indicates ready for driving)
-  delay(1000);
+  unsigned int voltage = evshield.bank_a.evshieldGetBatteryVoltage();
+  Serial.print(F("Battery voltage: ")); Serial.print( voltage ); Serial.println(F(" mV (on batteries, should be above 5000)"));
 
+  if (voltage>6000)
+    evshield.ledSetRGB(0, 255, 0); // led green, battery Ok, ready for driving
+  else if (voltage>5000)
+    evshield.ledSetRGB(160, 160, 20); // led orange, battery might be low, ready for driving
+  else
+    evshield.ledSetRGB(255, 0, 0); // led red, battery low, problems might occur driving motors
+   
+  delay(1000);
   Serial.println(F("Ready to roll!"));
 }
 
