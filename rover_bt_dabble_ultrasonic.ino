@@ -39,6 +39,7 @@ long previousMillis = 0;        // will store last time LED was updated
 #define MAX_DISTANCE 300 // Maximum distance we want to ping for (in centimeters). Maximum sensor distance is rated at 400-500cm.
 
 NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
+boolean us_on = true;
 
 void setup() {
   // Open serial communication:
@@ -66,7 +67,9 @@ void setup() {
     evshield.ledSetRGB(160, 160, 20); // led orange, battery might be low, ready for driving
   else
     evshield.ledSetRGB(255, 0, 0); // led red, battery low, problems might occur driving motors
-   
+
+  Serial.println(F("Waiting for App connection..."));
+  Dabble.waitForAppConnection();
   delay(1000);
   Serial.println(F("Ready to roll!"));
 }
@@ -74,7 +77,7 @@ void setup() {
 void loop() {
   unsigned int distance = sonar.ping_cm(); // read distance from ultrasonic sensor
 
-  if (dr_forward && distance > 5 && distance < 30 ) { // is driving forward and object detected nearby
+  if (us_on && dr_forward && distance > 5 && distance < 30 ) { // if ultrasonic sensor is turned on, and driving forward and object detected nearby
     Serial.print("Distance: "); Serial.println(distance);
     stop();
   }
@@ -89,9 +92,9 @@ void loop() {
       // if the LED is off turn it on and vice-versa:
       blink_led = !blink_led;
       if (blink_led)
-        evshield.bank_a.centerLedSetRGB( 0, 0, 255); // turn on center led (between buttons)
+        evshield.ledSetRGB(0, 0, 255); // led blue (indicates driving backward)
       else 
-        evshield.bank_a.centerLedSetRGB( 0, 0, 0); // turn off center led (between buttons)
+        evshield.ledSetRGB(0, 0, 0); // led off
     }
   }
   
@@ -118,6 +121,18 @@ void loop() {
   else if (GamePad.isTrianglePressed()) {
     straight();
   }
+  else if (GamePad.isCrossPressed()) {
+    us_on = !us_on; // toggle us_on (ultrasonic sensor on/off)
+    if (us_on) {
+      Serial.println(F("us on"));
+      evshield.bank_a.centerLedSetRGB( 0, 255, 0); // green if ultrasonic sensor on
+    }
+    else {
+      Serial.println(F("us off"));
+      evshield.bank_a.centerLedSetRGB( 255, 0, 0); // red
+    }
+    delay(300);
+  }  
 
   if ( evshield.getButtonState(BTN_GO) ) stop();
 }
@@ -129,7 +144,6 @@ void manage_speed() {
   Serial.print(F("speed=")); Serial.println(speed);
 }
 
-
 void forward() {
   if (dr_backward) { // if we were moving in other direction, stop gently
     do_stop();
@@ -138,7 +152,6 @@ void forward() {
   dr_forward=true; dr_backward=false;
   evshield.bank_a.motorRunUnlimited( SH_Motor_Both, SH_Direction_Reverse, speed);
   evshield.ledSetRGB(255, 0, 0); // led green (indicates driving forward)
-  evshield.bank_a.centerLedSetRGB( 0, 0, 0); // turn off center led (between buttons)
 }
 
 void backward() {
@@ -154,9 +167,9 @@ void backward() {
 void do_stop() {
   speed=SH_Speed_Slow;
   evshield.bank_a.motorSetSpeed(SH_Motor_Both, SH_Speed_Slow);
+  delay(200);
   evshield.bank_a.motorStop(SH_Motor_Both, SH_Next_Action_Float);
-  evshield.bank_a.centerLedSetRGB( 0, 0, 0); // turn off center led (between buttons)
-  delay(300);
+  delay(200);
 }
 
 void stop() {
@@ -166,11 +179,13 @@ void stop() {
 }
 
 void left() {
-  evshield.bank_b.motorRunDegrees(SH_Motor_1, SH_Direction_Forward, SH_Speed_Slow, 10, SH_Completion_Wait_For, SH_Next_Action_BrakeHold);
+  evshield.bank_b.motorRunDegrees(SH_Motor_1, SH_Direction_Forward, SH_Speed_Slow, 10, SH_Completion_Wait_For, SH_Next_Action_BrakeHold); // SH_Next_Action_BrakeHold SH_Next_Action_Float
+  delay(300);
 }
 
 void right() {
   evshield.bank_b.motorRunDegrees(SH_Motor_1, SH_Direction_Reverse, SH_Speed_Slow, 10, SH_Completion_Wait_For, SH_Next_Action_BrakeHold);
+  delay(300);
 }
 
 void straight() {
@@ -178,4 +193,5 @@ void straight() {
     evshield.bank_b.motorRunTachometer(SH_Motor_1, SH_Direction_Forward, SH_Speed_Slow, 0, SH_Move_Absolute,SH_Completion_Wait_For, SH_Next_Action_BrakeHold);
   else
     evshield.bank_b.motorRunTachometer(SH_Motor_1, SH_Direction_Reverse, SH_Speed_Slow, 0, SH_Move_Absolute,SH_Completion_Wait_For, SH_Next_Action_BrakeHold);
+  delay(300);
 }
