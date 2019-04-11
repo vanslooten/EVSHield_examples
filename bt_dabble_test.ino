@@ -44,6 +44,10 @@ void setup() {
     evshield.ledSetRGB(255, 0, 0); // led red, battery low, problems might occur driving motors
 
   Serial.println(F("Connect to the Bluetooth module with the Dabble app, then press some buttons on the Gamepad"));
+  Serial.println(F("Waiting for App connection..."));
+  Dabble.waitForAppConnection();
+  delay(1000);
+  Serial.println(F("Listening for input from the Gamepad..."));
 }
 
 void loop() {
