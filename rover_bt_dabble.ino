@@ -55,8 +55,9 @@ void setup() {
   else
     evshield.ledSetRGB(255, 0, 0); // led red, battery low, problems might occur driving motors
  
+  Serial.println(F("Waiting for App connection..."));
+  Dabble.waitForAppConnection();
   delay(1000);
-
   Serial.println(F("Ready to roll!"));
 }
 
@@ -103,7 +104,6 @@ void forward() {
   dr_forward=true; dr_backward=false;
   evshield.bank_a.motorRunUnlimited( SH_Motor_Both, SH_Direction_Forward, speed);
   evshield.ledSetRGB(255, 0, 0); // led green (indicates driving forward)
-  evshield.bank_a.centerLedSetRGB( 0, 0, 0); // turn off center led (between buttons)
 }
 
 void backward() {
@@ -118,10 +118,10 @@ void backward() {
 
 void do_stop() {
   speed=SH_Speed_Slow;
-  evshield.bank_a.motorSetSpeed (SH_Motor_Both, SH_Speed_Slow);
-  evshield.bank_a.motorStop(SH_Motor_Both, SH_Next_Action_Float);  
-  evshield.bank_a.centerLedSetRGB( 0, 0, 0); // turn off center led (between buttons)
-  delay(300);
+  evshield.bank_a.motorSetSpeed(SH_Motor_Both, SH_Speed_Slow);
+  delay(200);
+  evshield.bank_a.motorStop(SH_Motor_Both, SH_Next_Action_Float);
+  delay(200);
 }
 
 void stop() {
@@ -131,11 +131,13 @@ void stop() {
 }
 
 void left() {
-  evshield.bank_b.motorRunDegrees(SH_Motor_1, SH_Direction_Forward, SH_Speed_Slow, 10, SH_Completion_Wait_For, SH_Next_Action_BrakeHold);
+  evshield.bank_b.motorRunDegrees(SH_Motor_1, SH_Direction_Forward, SH_Speed_Slow, 10, SH_Completion_Wait_For, SH_Next_Action_BrakeHold); // SH_Next_Action_BrakeHold SH_Next_Action_Float
+  delay(300);
 }
 
 void right() {
   evshield.bank_b.motorRunDegrees(SH_Motor_1, SH_Direction_Reverse, SH_Speed_Slow, 10, SH_Completion_Wait_For, SH_Next_Action_BrakeHold);
+  delay(300);
 }
 
 void straight() {
@@ -143,4 +145,5 @@ void straight() {
     evshield.bank_b.motorRunTachometer(SH_Motor_1, SH_Direction_Forward, SH_Speed_Slow, 0, SH_Move_Absolute,SH_Completion_Wait_For, SH_Next_Action_BrakeHold);
   else
     evshield.bank_b.motorRunTachometer(SH_Motor_1, SH_Direction_Reverse, SH_Speed_Slow, 0, SH_Move_Absolute,SH_Completion_Wait_For, SH_Next_Action_BrakeHold);
+  delay(300);
 }
