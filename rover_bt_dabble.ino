@@ -46,11 +46,11 @@ void setup() {
   evshield.bank_b.motorResetEncoder( SH_Motor_1 ); // Reset the current encoder position to zero for the motor
 
   unsigned int voltage = evshield.bank_a.evshieldGetBatteryVoltage();
-  Serial.print(F("Battery voltage: ")); Serial.print( voltage ); Serial.println(F(" mV (on batteries, should be above 5000)"));
+  Serial.print(F("Battery voltage: ")); Serial.print( voltage ); Serial.println(F(" mV (on batteries, should be above 6000)"));
 
-  if (voltage>6000)
+  if (voltage>6500)
     evshield.ledSetRGB(0, 255, 0); // led green, battery Ok, ready for driving
-  else if (voltage>5000)
+  else if (voltage>5500)
     evshield.ledSetRGB(160, 160, 20); // led orange, battery might be low, ready for driving
   else
     evshield.ledSetRGB(255, 0, 0); // led red, battery low, problems might occur driving motors
@@ -86,7 +86,11 @@ void loop() {
     straight();
   }
 
-  if ( evshield.getButtonState(BTN_GO) ) stop();
+  if ( evshield.getButtonState(BTN_GO) ) {
+    if (dr_forward||dr_backward) stop();
+    else forward();
+  }
+  //checkMotors();
 }
 
 void manage_speed() {
@@ -127,6 +131,7 @@ void do_stop() {
 void stop() {
   dr_forward=false; dr_backward=false;
   do_stop();
+  evshield.bank_a.motorReset();
   evshield.ledSetRGB(165, 255, 0); // led orange (indicates ready for driving)
 }
 
@@ -146,4 +151,29 @@ void straight() {
   else
     evshield.bank_b.motorRunTachometer(SH_Motor_1, SH_Direction_Reverse, SH_Speed_Slow, 0, SH_Move_Absolute,SH_Completion_Wait_For, SH_Next_Action_BrakeHold);
   delay(300);
+  evshield.bank_b.motorReset();
+}
+
+void checkMotors() {
+/*
+ Check all 3 used motors to see if they are stalled.
+ From EVShield-Advanced-Development-Guide.pdf:
+ Stopped due to stall:
+    Position Control bit (bit 3) is 1
+    ‘Motor is Powered’ bit (bit 2) is 1
+    Stalled bit (bit 7) is 1
+*/
+  bool reset = false;
+  uint8_t status = evshield.bank_b.motorGetStatusByte(SH_Motor_1);
+  if (bitRead(status, 2) && bitRead(status, 3) && bitRead(status, 7)) reset = true; // if bit 2, 3 and 7 are '1'
+  status = evshield.bank_a.motorGetStatusByte(SH_Motor_1);
+  if (bitRead(status, 2) && bitRead(status, 3) && bitRead(status, 7)) reset = true; // if bit 2, 3 and 7 are '1'
+  status = evshield.bank_a.motorGetStatusByte(SH_Motor_2);
+  if (bitRead(status, 2) && bitRead(status, 3) && bitRead(status, 7)) reset = true; // if bit 2, 3 and 7 are '1'
+  if (reset) {
+    straight();
+    stop();
+    evshield.bank_a.centerLedSetRGB( 255, 0, 0); // red
+  }
+  else evshield.bank_a.centerLedSetRGB( 0, 0, 0); // off
 }
