@@ -30,9 +30,9 @@ void setup() {
   unsigned int voltage = evshield.bank_a.evshieldGetBatteryVoltage();
   Serial.print(F("Battery voltage: ")); Serial.print( voltage ); Serial.println(F(" mV (on batteries, should be above 5000)"));
 
-  if (voltage>6000)
+  if (voltage>6500)
     evshield.ledSetRGB(0, 255, 0); // led green, battery Ok, ready for driving
-  else if (voltage>5000)
+  else if (voltage>5500)
     evshield.ledSetRGB(160, 160, 20); // led orange, battery might be low, ready for driving
   else
     evshield.ledSetRGB(255, 0, 0); // led red, battery low, problems might occur driving motors

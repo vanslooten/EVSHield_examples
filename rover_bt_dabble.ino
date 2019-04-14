@@ -55,13 +55,30 @@ void setup() {
   else
     evshield.ledSetRGB(255, 0, 0); // led red, battery low, problems might occur driving motors
  
-  Serial.println(F("Waiting for App connection..."));
-  Dabble.waitForAppConnection();
+  //Serial.println(F("Waiting for App connection..."));
+  //Dabble.waitForAppConnection();
   delay(1000);
   Serial.println(F("Ready to roll!"));
 }
 
 void loop() {
+  if ( evshield.getButtonState(BTN_GO) ) {
+    Serial.println(F("GO"));
+    if (dr_forward||dr_backward) // driving (forward or backward)?
+      stop();
+    else {
+      straight();
+      forward();
+    }
+  }
+  else if (evshield.getButtonState( BTN_LEFT ) ) {
+    left();
+  }
+  else if (evshield.getButtonState( BTN_RIGHT ) ) {
+    right();
+  }
+
+  // start processing input from Dabble app:
   Dabble.processInput();
   if (GamePad.isUpPressed()||GamePad.isStartPressed()) {
     Serial.println(F("UP"));
@@ -86,10 +103,6 @@ void loop() {
     straight();
   }
 
-  if ( evshield.getButtonState(BTN_GO) ) {
-    if (dr_forward||dr_backward) stop();
-    else forward();
-  }
   //checkMotors();
 }
 
