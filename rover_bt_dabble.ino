@@ -21,6 +21,7 @@
 // dabble:
 #define CUSTOM_SETTINGS
 #define INCLUDE_GAMEPAD_MODULE
+#define INCLUDE_MUSIC_MODULE
 #include <Dabble.h>
 
 EVShield evshield(0x34,0x36);
@@ -55,8 +56,7 @@ void setup() {
   else
     evshield.ledSetRGB(255, 0, 0); // led red, battery low, problems might occur driving motors
  
-  //Serial.println(F("Waiting for App connection..."));
-  //Dabble.waitForAppConnection();
+  Music.play("A4"); // if already connected to Dabble app, play a tone
   delay(1000);
   Serial.println(F("Ready to roll!"));
 }
@@ -64,8 +64,11 @@ void setup() {
 void loop() {
   if ( evshield.getButtonState(BTN_GO) ) {
     Serial.println(F("GO"));
-    if (dr_forward||dr_backward) // driving (forward or backward)?
+    if (dr_forward||dr_backward) { // driving (forward or backward)?
+      Music.stop();
+      Music.play("B4");
       stop();
+    }
     else {
       straight();
       forward();
@@ -82,11 +85,11 @@ void loop() {
   Dabble.processInput();
   if (GamePad.isUpPressed()||GamePad.isStartPressed()) {
     Serial.println(F("UP"));
-    backward();
+    forward();
   }
   else if (GamePad.isDownPressed()) {
     Serial.println(F("DOWN"));
-    forward();
+    backward();
   }
   else if (GamePad.isLeftPressed()) {
     Serial.println(F("LEFT"));
@@ -97,6 +100,8 @@ void loop() {
      right();
   }
   else if (GamePad.isSquarePressed()) {
+    Music.stop();
+    Music.play("B4");
     stop();
   }
   else if (GamePad.isTrianglePressed()) {
@@ -119,7 +124,7 @@ void forward() {
   }
   manage_speed();
   dr_forward=true; dr_backward=false;
-  evshield.bank_a.motorRunUnlimited( SH_Motor_Both, SH_Direction_Forward, speed);
+  evshield.bank_a.motorRunUnlimited( SH_Motor_Both, SH_Direction_Reverse, speed);
   evshield.ledSetRGB(255, 0, 0); // led green (indicates driving forward)
 }
 
@@ -129,7 +134,7 @@ void backward() {
   }
   manage_speed();
   dr_forward=false; dr_backward=true;
-  evshield.bank_a.motorRunUnlimited( SH_Motor_Both, SH_Direction_Reverse, speed);
+  evshield.bank_a.motorRunUnlimited( SH_Motor_Both, SH_Direction_Forward, speed);
   evshield.ledSetRGB(0, 0, 255); // led blue (indicates driving backward)
 }
 
