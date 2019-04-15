@@ -21,6 +21,7 @@
 // dabble:
 #define CUSTOM_SETTINGS
 #define INCLUDE_GAMEPAD_MODULE
+#define INCLUDE_MUSIC_MODULE
 #include <Dabble.h>
 
 EVShield evshield(0x34,0x36);
@@ -61,20 +62,38 @@ void setup() {
   unsigned int voltage = evshield.bank_a.evshieldGetBatteryVoltage();
   Serial.print(F("Battery voltage: ")); Serial.print( voltage ); Serial.println(F(" mV (on batteries, should be above 5000)"));
 
-  if (voltage>6000)
+  if (voltage>6500)
     evshield.ledSetRGB(0, 255, 0); // led green, battery Ok, ready for driving
-  else if (voltage>5000)
+  else if (voltage>5500)
     evshield.ledSetRGB(160, 160, 20); // led orange, battery might be low, ready for driving
   else
     evshield.ledSetRGB(255, 0, 0); // led red, battery low, problems might occur driving motors
-
-  Serial.println(F("Waiting for App connection..."));
-  Dabble.waitForAppConnection();
+ 
+  Music.play("A4"); // if already connected to Dabble app, play a tone
   delay(1000);
   Serial.println(F("Ready to roll!"));
 }
 
 void loop() {
+  if ( evshield.getButtonState(BTN_GO) ) {
+    Serial.println(F("GO"));
+    if (dr_forward||dr_backward) { // driving (forward or backward)?
+      Music.stop();
+      Music.play("B4");
+      stop();
+    }
+    else {
+      straight();
+      forward();
+    }
+  }
+  else if (evshield.getButtonState( BTN_LEFT ) ) {
+    left();
+  }
+  else if (evshield.getButtonState( BTN_RIGHT ) ) {
+    right();
+  }
+  
   unsigned int distance = sonar.ping_cm(); // read distance from ultrasonic sensor
 
   if (us_on && dr_forward && distance > 5 && distance < 30 ) { // if ultrasonic sensor is turned on, and driving forward and object detected nearby
@@ -116,6 +135,8 @@ void loop() {
      right();
   }
   else if (GamePad.isSquarePressed()) {
+    Music.stop();
+    Music.play("B4");
     stop();
   }
   else if (GamePad.isTrianglePressed()) {
@@ -132,9 +153,7 @@ void loop() {
       evshield.bank_a.centerLedSetRGB( 255, 0, 0); // red
     }
     delay(300);
-  }  
-
-  if ( evshield.getButtonState(BTN_GO) ) stop();
+  }
 }
 
 void manage_speed() {
@@ -175,6 +194,7 @@ void do_stop() {
 void stop() {
   dr_forward=false; dr_backward=false;
   do_stop();
+  evshield.bank_a.motorReset();
   evshield.ledSetRGB(165, 255, 0); // led orange (indicates ready for driving)
 }
 
@@ -194,4 +214,5 @@ void straight() {
   else
     evshield.bank_b.motorRunTachometer(SH_Motor_1, SH_Direction_Reverse, SH_Speed_Slow, 0, SH_Move_Absolute,SH_Completion_Wait_For, SH_Next_Action_BrakeHold);
   delay(300);
+  evshield.bank_b.motorReset();
 }
