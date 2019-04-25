@@ -16,7 +16,8 @@
   Open the Serial Monitor to view test output. Make sure the speed in the Serial Monitor is set to 9600.
 
   If the car is driving in the wrong direction, find occurrences of calls to differentialDrive(...) and
-  swap the parameters SH_Direction_Reverse with SH_Direction_Forward and vice versa
+  swap the parameters SH_Direction_Reverse with SH_Direction_Forward and vice versa.
+  Also, in function differentialDrive(), swap variables ratio_L and ratio_R at the last two lines.
  */
 #include <Wire.h>
 #include <EVShield.h>
