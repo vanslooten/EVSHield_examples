@@ -1,6 +1,8 @@
 /*
   Checkout the building guide:
   https://home.et.utwente.nl/slootenvanf/2019/04/04/lego-rover-car/
+
+  This sketch has been improved with differentialDrive by Thimo Willems
   
   This sketch uses the libraries "EVShield" and "Dabble".
   Check if these are present in Documents\Arduino\libraries. If not, install them:
@@ -13,7 +15,8 @@
   Connect USB cable then Upload this sketch.
   Open the Serial Monitor to view test output. Make sure the speed in the Serial Monitor is set to 9600.
 
-  If the car is driving in the wrong direction, swap SH_Direction_Reverse and SH_Direction_Forward in forward() and backward() functions
+  If the car is driving in the wrong direction, find occurrences of calls to differentialDrive(...) and
+  swap the parameters SH_Direction_Reverse with SH_Direction_Forward and vice versa
  */
 #include <Wire.h>
 #include <EVShield.h>
@@ -26,8 +29,13 @@
 
 EVShield evshield(0x34,0x36);
 
-unsigned int speed=SH_Speed_Slow; // start speed
+unsigned int start_speed = 15;  // start speed (speed can be any value between 0-100)
+unsigned int speed=start_speed;
 boolean dr_forward = false, dr_backward = false; // moving in forward or backward direction
+
+// car dimension related:
+unsigned int car_rear_track = 145; // car's rear track, the distance between the centerline of each rear wheel (in millimeters!)
+unsigned int car_wheelbase = 185; // car's wheelbase, the distance between the center of the front wheels and the rear wheels (in millimeters!)
 
 void setup() {
   // Open serial communication:
@@ -70,7 +78,6 @@ void loop() {
       stop();
     }
     else {
-      straight();
       forward();
     }
   }
@@ -83,6 +90,7 @@ void loop() {
 
   // start processing input from Dabble app:
   Dabble.processInput();
+  
   if (GamePad.isUpPressed()||GamePad.isStartPressed()) {
     Serial.println(F("UP"));
     forward();
@@ -108,39 +116,48 @@ void loop() {
     straight();
   }
 
-  //checkMotors();
+  //checkMotors(); // used for debugging only
 }
 
-void manage_speed() {
+void increase_speed() {
   speed=speed+5; // increase speed
   delay(300);
   if (speed>SH_Speed_Full) speed=SH_Speed_Full;
-  Serial.print(F("speed=")); Serial.println(speed);
+}
+
+void decrease_speed() {
+  speed=speed-5; // increase speed
+  if (speed<start_speed) speed=start_speed;
+  delay(300);
 }
 
 void forward() {
-  if (dr_backward) { // if we were moving in other direction, stop gently
-    do_stop();
+  if (dr_backward) { // if we were moving in other direction, decrease speed
+    decrease_speed();
+    differentialDrive(SH_Direction_Forward);
+  } else {
+    increase_speed();
+    dr_forward=true; dr_backward=false;
+    differentialDrive(SH_Direction_Reverse);
+    evshield.ledSetRGB(255, 0, 0); // led green (indicates driving forward)
   }
-  manage_speed();
-  dr_forward=true; dr_backward=false;
-  evshield.bank_a.motorRunUnlimited( SH_Motor_Both, SH_Direction_Reverse, speed);
-  evshield.ledSetRGB(255, 0, 0); // led green (indicates driving forward)
 }
 
 void backward() {
-  if (dr_forward) { // if we were moving in other direction, stop gently
-    do_stop();
+  if (dr_forward) { // if we were moving in other direction, decrease speed
+    decrease_speed();
+    differentialDrive(SH_Direction_Reverse);
+  } else {
+    increase_speed();
+    dr_forward=false; dr_backward=true;
+    differentialDrive(SH_Direction_Forward);
+    evshield.ledSetRGB(0, 0, 255); // led blue (indicates driving backward)
   }
-  manage_speed();
-  dr_forward=false; dr_backward=true;
-  evshield.bank_a.motorRunUnlimited( SH_Motor_Both, SH_Direction_Forward, speed);
-  evshield.ledSetRGB(0, 0, 255); // led blue (indicates driving backward)
 }
 
 void do_stop() {
-  speed=SH_Speed_Slow;
-  evshield.bank_a.motorSetSpeed(SH_Motor_Both, SH_Speed_Slow);
+  speed=start_speed;
+  evshield.bank_a.motorSetSpeed(SH_Motor_Both, start_speed);
   delay(200);
   evshield.bank_a.motorStop(SH_Motor_Both, SH_Next_Action_Float);
   delay(200);
@@ -154,13 +171,25 @@ void stop() {
 }
 
 void left() {
-  evshield.bank_b.motorRunDegrees(SH_Motor_1, SH_Direction_Forward, SH_Speed_Slow, 10, SH_Completion_Wait_For, SH_Next_Action_BrakeHold); // SH_Next_Action_BrakeHold SH_Next_Action_Float
+  evshield.bank_b.motorRunDegrees(SH_Motor_1, SH_Direction_Forward, SH_Speed_Slow, 12, SH_Completion_Wait_For, SH_Next_Action_BrakeHold); // SH_Next_Action_BrakeHold SH_Next_Action_Float
   delay(300);
+  Serial.print(F("steer: ")); Serial.println(evshield.bank_b.motorGetEncoderPosition( SH_Motor_1 ));
+  if (dr_forward) {
+    differentialDrive(SH_Direction_Reverse);
+  } else if (dr_backward) {
+    differentialDrive(SH_Direction_Forward);
+  }
 }
 
 void right() {
-  evshield.bank_b.motorRunDegrees(SH_Motor_1, SH_Direction_Reverse, SH_Speed_Slow, 10, SH_Completion_Wait_For, SH_Next_Action_BrakeHold);
+  evshield.bank_b.motorRunDegrees(SH_Motor_1, SH_Direction_Reverse, SH_Speed_Slow, 12, SH_Completion_Wait_For, SH_Next_Action_BrakeHold);
   delay(300);
+  Serial.print(F("steer: ")); Serial.println(evshield.bank_b.motorGetEncoderPosition( SH_Motor_1 ));
+  if (dr_forward) {
+    differentialDrive(SH_Direction_Reverse);
+  } else if (dr_backward) {
+    differentialDrive(SH_Direction_Forward);
+  }
 }
 
 void straight() {
@@ -194,4 +223,19 @@ void checkMotors() {
     evshield.bank_a.centerLedSetRGB( 255, 0, 0); // red
   }
   else evshield.bank_a.centerLedSetRGB( 0, 0, 0); // off
+}
+
+void differentialDrive(SH_Direction dir) {
+  if (evshield.bank_b.motorGetEncoderPosition( SH_Motor_1 ) > -3 && evshield.bank_b.motorGetEncoderPosition( SH_Motor_1 ) < 3) {
+    //just drive both motors equally
+    evshield.bank_a.motorRunUnlimited( SH_Motor_Both, dir, speed);
+  } else {
+    float steer_pos = evshield.bank_b.motorGetEncoderPosition( SH_Motor_1 ) / 57.296; // calculates current steering position in radians
+    float steer_radius = car_wheelbase * tan(1.571 - steer_pos); // calculates the radius, from centerline of car to center of steercircle
+    float ratio_L = (steer_radius - (car_rear_track / 2)) / steer_radius;
+    float ratio_R = (steer_radius + (car_rear_track / 2)) / steer_radius;
+    
+    evshield.bank_a.motorRunUnlimited( SH_Motor_1, dir, speed * ratio_L);
+    evshield.bank_a.motorRunUnlimited( SH_Motor_2, dir, speed * ratio_R);
+  }
 }
