@@ -30,8 +30,8 @@
 
 EVShield evshield(0x34,0x36);
 
-unsigned int start_speed = 15;  // start speed (speed can be any value between 0-100)
-unsigned int speed=start_speed;
+int start_speed = 15;  // start speed (speed can be any value between 0-100)
+int speed=start_speed;
 boolean dr_forward = false, dr_backward = false; // moving in forward or backward direction
 
 // car dimension related:
@@ -83,10 +83,10 @@ void loop() {
     }
   }
   else if (evshield.getButtonState( BTN_LEFT ) ) {
-    left();
+    steer(SH_Direction_Forward);
   }
   else if (evshield.getButtonState( BTN_RIGHT ) ) {
-    right();
+    steer(SH_Direction_Reverse);
   }
 
   // start processing input from Dabble app:
@@ -102,11 +102,11 @@ void loop() {
   }
   else if (GamePad.isLeftPressed()) {
     Serial.println(F("LEFT"));
-    left();
+    steer(SH_Direction_Forward);
   }
   else if (GamePad.isRightPressed()) {
      Serial.println(F("RIGHT"));
-     right();
+     steer(SH_Direction_Reverse);
   }
   else if (GamePad.isSquarePressed()) {
     Music.stop();
@@ -156,23 +156,21 @@ void backward() {
   }
 }
 
-void do_stop() {
-  speed=start_speed;
-  evshield.bank_a.motorSetSpeed(SH_Motor_Both, start_speed);
-  delay(200);
-  evshield.bank_a.motorStop(SH_Motor_Both, SH_Next_Action_Float);
-  delay(200);
-}
-
 void stop() {
   dr_forward=false; dr_backward=false;
-  do_stop();
+  speed=start_speed;
+  evshield.bank_a.motorSetSpeed(SH_Motor_Both, start_speed);
+  delay(300);
+  evshield.bank_a.motorStop(SH_Motor_Both, SH_Next_Action_Float);
+  delay(300);
   evshield.bank_a.motorReset();
   evshield.ledSetRGB(165, 255, 0); // led orange (indicates ready for driving)
 }
 
-void left() {
-  evshield.bank_b.motorRunDegrees(SH_Motor_1, SH_Direction_Forward, SH_Speed_Slow, 12, SH_Completion_Wait_For, SH_Next_Action_BrakeHold); // SH_Next_Action_BrakeHold SH_Next_Action_Float
+
+void steer(SH_Direction direction) {
+// left: SH_Direction_Forward, right: SH_Direction_Reverse
+  evshield.bank_b.motorRunDegrees(SH_Motor_1, direction, SH_Speed_Slow, 12, SH_Completion_Wait_For, SH_Next_Action_BrakeHold); // SH_Next_Action_Brake SH_Next_Action_BrakeHold SH_Next_Action_Float
   delay(300);
   Serial.print(F("steer: ")); Serial.println(evshield.bank_b.motorGetEncoderPosition( SH_Motor_1 ));
   if (dr_forward) {
@@ -182,16 +180,6 @@ void left() {
   }
 }
 
-void right() {
-  evshield.bank_b.motorRunDegrees(SH_Motor_1, SH_Direction_Reverse, SH_Speed_Slow, 12, SH_Completion_Wait_For, SH_Next_Action_BrakeHold);
-  delay(300);
-  Serial.print(F("steer: ")); Serial.println(evshield.bank_b.motorGetEncoderPosition( SH_Motor_1 ));
-  if (dr_forward) {
-    differentialDrive(SH_Direction_Reverse);
-  } else if (dr_backward) {
-    differentialDrive(SH_Direction_Forward);
-  }
-}
 
 void straight() {
   if (evshield.bank_b.motorGetEncoderPosition( SH_Motor_1 )>0)
@@ -200,6 +188,12 @@ void straight() {
     evshield.bank_b.motorRunTachometer(SH_Motor_1, SH_Direction_Reverse, SH_Speed_Slow, 0, SH_Move_Absolute,SH_Completion_Wait_For, SH_Next_Action_BrakeHold);
   delay(300);
   evshield.bank_b.motorReset();
+  evshield.bank_b.motorResetEncoder(SH_Motor_1);
+  if (dr_forward) {
+    differentialDrive(SH_Direction_Reverse);
+  } else if (dr_backward) {
+    differentialDrive(SH_Direction_Forward);
+  }
 }
 
 void checkMotors() {
@@ -219,9 +213,11 @@ void checkMotors() {
   status = evshield.bank_a.motorGetStatusByte(SH_Motor_2);
   if (bitRead(status, 2) && bitRead(status, 3) && bitRead(status, 7)) reset = true; // if bit 2, 3 and 7 are '1'
   if (reset) {
+    Serial.print(F("RESET speed=")); Serial.print(evshield.bank_a.motorGetSpeed(SH_Motor_1)); Serial.print(F(" ")); Serial.println(evshield.bank_a.motorGetSpeed(SH_Motor_2));
     straight();
     stop();
     evshield.bank_a.centerLedSetRGB( 255, 0, 0); // red
+    delay(10000);
   }
   else evshield.bank_a.centerLedSetRGB( 0, 0, 0); // off
 }
@@ -230,12 +226,14 @@ void differentialDrive(SH_Direction dir) {
   if (evshield.bank_b.motorGetEncoderPosition( SH_Motor_1 ) > -3 && evshield.bank_b.motorGetEncoderPosition( SH_Motor_1 ) < 3) {
     //just drive both motors equally
     evshield.bank_a.motorRunUnlimited( SH_Motor_Both, dir, speed);
+    Serial.print(F("DDrive: EQUAL speed=")); Serial.println(speed);
   } else {
     float steer_pos = evshield.bank_b.motorGetEncoderPosition( SH_Motor_1 ) / 57.296; // calculates current steering position in radians
     float steer_radius = car_wheelbase * tan(1.571 - steer_pos); // calculates the radius, from centerline of car to center of steercircle
     float ratio_L = (steer_radius - (car_rear_track / 2)) / steer_radius;
     float ratio_R = (steer_radius + (car_rear_track / 2)) / steer_radius;
     
+    Serial.print(F("DDrive: DIFF speed=")); Serial.print(speed); Serial.print(" "); Serial.print(speed * ratio_L); Serial.print(" "); Serial.println(speed * ratio_R);
     evshield.bank_a.motorRunUnlimited( SH_Motor_1, dir, speed * ratio_L);
     evshield.bank_a.motorRunUnlimited( SH_Motor_2, dir, speed * ratio_R);
   }
