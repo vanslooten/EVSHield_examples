@@ -24,13 +24,14 @@ EVShield evshield(0x34,0x36);
 void driveDistance(unsigned int distance, SH_Direction direction = SH_Direction_Reverse, int speed = SH_Speed_Medium);
 
 void setup() {
-  Serial.begin(115200);       // start serial port output, check for same speed at Serial Monitor!
+  Serial.begin(9600);       // start serial port output, check for same speed at Serial Monitor!
   
   evshield.init( SH_HardwareI2C );
   
   // reset motors
   evshield.bank_a.motorReset();
-  
+
+  Serial.println(F("Press Go to start..."));
   evshield.waitForButtonPress(BTN_GO);
 
   driveDistance(100); // distance to travel in cm 
@@ -41,6 +42,7 @@ void loop() {
 
 
 void driveDistance(unsigned int distance, SH_Direction direction = SH_Direction_Reverse, int speed = SH_Speed_Medium) {
+  Serial.print(F("Driving ")); Serial.print(distance); Serial.println(F("cm"));
   double circumference = WHEEL_DIAM * PI; // PI is-build in definition
   
   Serial.print(F("circumference=")); Serial.println(circumference);
