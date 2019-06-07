@@ -14,13 +14,13 @@
   Check if these are present in Documents\Arduino\libraries. If not, install them:
   https://home.et.utwente.nl/slootenvanf/wp-content/uploads/appdev-download/Installation_instructions.html#arduino
 
-  Connect USB cable then Upload this sketch.
+  Connect USB cable then Upload this sketch. Make sure batterypack is connected when using the ultrasonic sensor (it does not work on USB power).
   Open the Serial Monitor to view test output. Make sure the speed in the Serial Monitor is set to 9600.
   If communicating with another app (to recieve instructions), do not open the Serial Monitor!
 
   If the car is driving in the wrong direction, find occurrences of calls to differentialDrive(...) and
   swap the parameters SH_Direction_Reverse with SH_Direction_Forward and vice versa.
-  Also, in function differentialDrive(), swap variables ratio_L and ratio_R at the last two lines.
+  Also, in function differentialDrive(), swap variables ratio_L and ratio_R at the last 4 motor commands (calls to motorRunUnlimited() and motorRunDegrees()).
 
   If using the EV3 version of the touch-sensor, make sure you search-and-replace all occurences of EVs_NXTTouch with EVs_EV3Touch
 
