@@ -88,6 +88,7 @@ void loop() {
     Serial.print(F("Recieved: ")); Serial.println(instructions);
   }
 
+  // handle buttons of evshield
   if ( evshield.getButtonState(BTN_LEFT) ) { // change driving direction
     Serial.println(F("LEFT"));
     //reverseDirection();
@@ -116,7 +117,22 @@ void loop() {
     }
   }
 
-  delay(200);
+  // handle sensors while driving
+  if (dr_forward) {
+    if (touch.isPressed()) {
+      Serial.println(F("bump"));
+      // call method to reverse & turn
+      reverseTurn();
+    }
+    else {
+      unsigned int distance = sonar.ping_cm();
+      if (distance > 0 && distance < 30) {
+        find_a_way_out();
+      }
+    }
+  }
+
+  delay(100);
 }
 
 
@@ -296,11 +312,11 @@ void straight() {
 }
 
 
+/**
+ * Stop and reverse the direction we are driving (go back).
+ * (if not driving, this will start the motors in a forward direction)     
+ */
 void reverseDirection() {
-  /**
-     Stop and reverse the direction we are driving (go back).
-     (if not driving, this will start the motors in a forward direction)
-  */
   Serial.println(F("reverseDirection()"));
   if (dr_forward) {
     dr_forward = false;
@@ -312,6 +328,15 @@ void reverseDirection() {
   }
   drive();
 }
+
+
+/**
+ * Read the distance from the ultrasonic sensor
+ */
+unsigned int readDistance() {
+  return sonar.ping_cm();
+}
+
 
 /**
    Reads a received String (instructions) and turns it into individual commands.
@@ -347,6 +372,7 @@ void readCommand() {
   }
 }
 
+
 /**
    Translates received command to actual method calls.
 */
@@ -360,4 +386,52 @@ void doCommand(int i, char c) {
   if (c == 's') steer(i);
   else if (c == 't') turn(i);
   else if (c == 'd') drive(i);
+}
+
+
+void find_a_way_out() {
+  Serial.println(F("find_a_way_out()"));
+
+  stop();
+  // Turn the Ultrasonic Sensor 90 degrees (use motor on top!)
+  evshield.bank_b.motorRunDegrees(sensorMotor, SH_Direction_Forward, speed, 90, SH_Completion_Wait_For, SH_Next_Action_BrakeHold );
+  // Read the value of the Ultrasonic Sensor (look left)
+  unsigned int left = sonar.ping_cm(); // read distance from ultrasonic sensor
+  // Turn the Ultrasonic Sensor -180 degrees
+  evshield.bank_b.motorRunDegrees(sensorMotor, SH_Direction_Reverse, speed, 180, SH_Completion_Wait_For, SH_Next_Action_BrakeHold );
+    
+  // take a reading:
+  unsigned int right = sonar.ping_cm(); // read distance from ultrasonic sensor
+
+  Serial.print(F("left=")); Serial.print(left);
+  Serial.print(F(" right=")); Serial.println(right);
+  
+  // look forward:    
+  evshield.bank_b.motorRunDegrees(sensorMotor, SH_Direction_Forward, speed, 90, SH_Completion_Wait_For, SH_Next_Action_BrakeHold );
+
+  // choose direction
+  if (left>right) {
+    Serial.println(F("go left"));
+    steer(-20);
+  }
+  else {
+    Serial.println(F("go right"));
+    steer(20);
+  }
+  drive(-30);
+  straight();
+  drive(); // Continue moving
+}
+
+/**
+ * Make a reverse turn.
+ */
+void reverseTurn() {
+  /* Stop, drive backward a little and then make a turn,
+  to 'escape' from something if we bumped into something */
+  Serial.println(F("reverseTurn()"));
+  steer(15);
+  drive(-40); // drive back
+  straight();
+  drive();
 }
