@@ -24,7 +24,7 @@
 
   If using the EV3 version of the touch-sensor, make sure you search-and-replace all occurences of EVs_NXTTouch with EVs_EV3Touch
 
-  Warning: if you get "__vector_7" compile errors, edit NewPing.h (Arduino\libraries\NewPing\src): find "#define TIMER_ENABLED true" and change it to false
+  More possible issues are described in the README: https://github.com/vanslooten/EVSHield_examples/
 */
 
 #include <EVShield.h>
