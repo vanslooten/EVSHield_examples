@@ -1,8 +1,8 @@
-#EVShield examples
+# EVShield examples
 Example Arduino sketches for the EVShield.
 Some of these are described in [articles on my website](https://home.et.utwente.nl/slootenvanf/tag/evshield/).
 
-#Issues
+# Issues
 If you get "__vector_7" compile errors, edit NewPing.h (Arduino\libraries\NewPing\src): find "#define TIMER_ENABLED true" and change it to false
 
 If you get further timer related errors, you might consider:
